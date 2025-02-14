@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Leaflet Demo – Rysowanie i Edycja Linii</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
+  <style>
+    #map { height: 500px; width: 100%; }
+    #controls { margin: 10px; }
+    button { margin: 5px; padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button id="drawLine">Rysuj linię</button>
+    <button id="editLine">Edytuj linię</button>
+    <button id="deleteLine">Usuń linię</button>
+  </div>
+  <div id="map"></div>
+  
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+  <script>
+    // Inicjalizacja mapy
+    var map = L.map('map').setView([51.505, -0.09], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Utworzenie warstwy do przechowywania rysowanych elementów
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    
+    // Konfiguracja opcji rysowania
+    var drawControl = new L.Control.Draw({
+      draw: {
+        polyline: {
+          shapeOptions: {
+            color: 'red'
+          }
+        },
+        polygon: false,
+        circle: false,
+        rectangle: false,
+        marker: false,
+        circlemarker: false
+      },
+      edit: {
+        featureGroup: drawnItems,
+        edit: false,   // Wyłączamy edycję w domyślnym toolbarze, bo używamy własnych przycisków
+        remove: false
+      }
+    });
+    // Nie dodajemy drawControl do mapy, aby nie pojawił się domyślny panel
+
+    var currentDraw; // zmienna do przechowywania aktywnego trybu rysowania/edycji
+
+    // Obsługa przycisku "Rysuj linię"
+    document.getElementById('drawLine').onclick = function() {
+      // Jeśli jakiś tryb jest aktywny, wyłącz go
+      if (currentDraw) {
+        currentDraw.disable();
+      }
+      // Uruchom tryb rysowania linii
+      currentDraw = new L.Draw.Polyline(map, drawControl.options.draw.polyline);
+      currentDraw.enable();
+    };
+
+    // Obsługa przycisku "Edytuj linię"
+    document.getElementById('editLine').onclick = function() {
+      // Wyłącz aktywny tryb rysowania, jeśli jest
+      if (currentDraw) {
+        currentDraw.disable();
+      }
+      // Uruchom tryb edycji dla istniejących elementów
+      var editor = new L.EditToolbar.Edit(map, {
+        featureGroup: drawnItems
+      });
+      editor.enable();
+    };
+
+    // Obsługa przycisku "Usuń linię"
+    document.getElementById('deleteLine').onclick = function() {
+      if (currentDraw) {
+        currentDraw.disable();
+      }
+      // Uruchom tryb usuwania dla wybranych elementów
+      var deleter = new L.EditToolbar.Delete(map, {
+        featureGroup: drawnItems
+      });
+      deleter.enable();
+    };
+
+    // Zdarzenie dodania nowego elementu do warstwy
+    map.on(L.Draw.Event.CREATED, function (event) {
+      var layer = event.layer;
+      drawnItems.addLayer(layer);
+    });
+  </script>
+</body>
+</html>
+
